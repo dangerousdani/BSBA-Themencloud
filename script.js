@@ -6,10 +6,7 @@ import { OrbitControls } from '/sources/OrbitControls.js';
 // 🌐 GLOBAL VARIABLES -------------------------- 
 
 let scene, renderer, camera, controls;
-
-let houses = [];
-let platforms = [];
-let keywordColor = "white";
+let Cubes = [];
 
 // RUN MAIN FUNCTIONS (AND LOAD JSON DATA (D3 Framework is in html!)-------------------------- 
 d3.json("sources/Themencloud-stichworte.json").then(function (data) {
@@ -32,9 +29,8 @@ document.body.appendChild(renderer.domElement);
 
 // 🌇 SCENE SETTING -------------------------- 
 
-var setcolor = 0x00000;
 scene = new THREE.Scene();
-scene.background = new THREE.Color(setcolor);
+scene.background = new THREE.Color(0x96AFB9);
 
 // 🎥 CAM SETTING -------------------------- 
 
@@ -43,10 +39,11 @@ camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight
 // CONTROLS SETTING -------------------------- 
 
 controls = new OrbitControls( camera, renderer.domElement );
-//controls.target.set(0,0,0);
+controls.target.set(17,17,17);
 
-camera.position.set( 5, 5, 5 );
+camera.position.set( 35, 35, 35 );
 controls.autoRotate = true;
+controls.autoRotateSpeed = 0.3;
 controls.update();
 
 // 🌞 LIGHT SETTINGS -------------------------- 
@@ -56,35 +53,49 @@ const groundColor = 0xffffff;
 const hemiIntensity = 1;
 const hemiLight = new THREE.HemisphereLight(skyColor, groundColor, hemiIntensity);
 hemiLight.position.set(0, 0, 0);
-scene.add(hemiLight);
+//scene.add(hemiLight);
 
 
 // 🎯 MAIN FUNCTION -------------------------- 
 
 function init(data) {
 
-  let tweets = [];
+  let keywords = [];
   for (var i = 0; i < data.article.length; i++) {
-    tweets.push(data.article[i].Stichwort);
+    keywords.push(data.article[i].Stichwort);
   }
-  // console.log('🐦 tweet: ' + tweets);
 
-  let roof = [];
-  for (var i = 0; i < data.article.length; i++) {
-    roof.push(data.article[i].roof);
-  }
-  // console.log('🏠 roof: ' + roof);
+  generate_cloud(keywords);
+  generate_cloud.position = 100;
 
-  generate_city(tweets, roof);
-
-  // helper(); // Koordinatensystem  
+  helper(); // Koordinatensystem  
 }
 
-// 🎯 CLASS FOR SINGLE CUBE -------------------------- 
+// CLASS FOR CATEGORY CUBE
 
-class House {
+function generate_categoryCube() {
 
-  constructor(_xPos, _yPos, _zPos, _height, _tweetString, _fixedBoxSizeY, _roofColor) {
+  const geometry = new THREE.BoxGeometry();
+  const material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
+  const cube = new THREE.Mesh( geometry, material );
+
+  cube.position.z = Math.random()*40;
+  cube.position.y = Math.random()*40;
+  cube.position.x = Math.random()*40;
+
+  cube.scale.y = 5; // height = Math.random()*40;
+  cube.scale.x = 5;
+  cube.scale.z = 5;
+
+  scene.add( cube );
+
+}
+
+// CLASS FOR SINGLE CUBE -------------------------- 
+
+class Cube {
+
+  constructor(_xPos, _yPos, _zPos, _height, _keywordString, _fixedBoxSizeY) {
     this.xPos = _xPos;
     this.yPos = _yPos;
     this.zPos = _zPos;
@@ -94,90 +105,65 @@ class House {
     this.width = 1;
     this.depth = 1;
 
-    this.tweetString = _tweetString;
+    this.keywordString = _keywordString;
 
     this.dynamicTexture = new THREEx.DynamicTexture(400, 400 * this.height)
     this.dynamicTexture.clear('rgb(29,41,81)')
 
-    // 🏠 GEOMETRY OF THE CUBE 
+    // GEOMETRY OF THE CUBE 
 
     this.geometry = new THREE.BoxBufferGeometry(this.width, this.height, this.depth);
 
-    // COLORS OF THE ROOF AND BUILDING
+    // COLORS OF THE CUBE
 
-    let buildingColor = "rgb(209,255,23)";
-    this.roofColor = "rgb(209,255,23)";
-    let emissiveColor = "rgb(209,255,23)";
-
-    // die Dächer der Häuser sollen zu 10% weiß und 90% schwarz sein und das durch eine zufällige Anordnung
-    let colorProbability = Math.random();
-
-    if (colorProbability < 0.2) {
-      this.roofColor = "rgb(209,255,23)";
-    }
+    let CubeColor = "rgb(209,255,23)";
+    let EmissiveColor = "rgb(40,255,6)";
+    let emissiveIntensityvalue = 11;
 
     this.checkText = true;
 
     this.dynamicTexture.drawTextCooked({
-      background: "black", // der Hintergrund muss schwarz sein, damit die emissiveMap (als Maske) funktioniert
-      text: this.tweetString,
+      background: "white", // Wenn emessiv muss der BG schwarz sein, damit die emissiveMap (als Maske) funktioniert
+      text: this.keywordString,
       lineHeight: 0.12 / this.height,
-      emissive: 1,
-      blending: THREE.AdditiveBlending,
-      fillStyle: keywordColor,
+      fillStyle: "black",
       font: "48px Helvetica",
       marginTop: ((this.height - this.fixedBoxSizeY + 1) / this.height) // da fixedBoxSize noch zu hoch ist.
     })
 
+    // Haben verschiedene Seiten eines Cubes verschiedene Materialitäten, muss jede Seite einzeln definiert werden.
     this.material = [
       new THREE.MeshPhongMaterial({
-        color: buildingColor,
-        specular: 0x000000,
-        emissiveIntensity: 1,
-        emissive: emissiveColor,
+        emissiveIntensity: emissiveIntensityvalue,
+        color: new THREE.Color(CubeColor),
+        emissive: new THREE.Color(EmissiveColor),
         emissiveMap: this.dynamicTexture.texture,
-        //envMap: sunshine,
-        shininess: 100,
-        reflectivity: 0
       }),
       new THREE.MeshPhongMaterial({
-        color: buildingColor,
-        specular: 0x000000,
-        emissiveIntensity: 1,
-        emissive: emissiveColor,
-        emissiveMap: this.dynamicTexture.texture,
-        shininess: 100,
-        reflectivity: 0
+        emissiveIntensity: emissiveIntensityvalue,
+        color: new THREE.Color(CubeColor),
+        emissive: new THREE.Color(EmissiveColor),
+        map: this.dynamicTexture.texture,
+      }),
+      new THREE.MeshStandardMaterial({
+        emissiveIntensity: emissiveIntensityvalue,
+        color: new THREE.Color(CubeColor),
+        emissive: new THREE.Color(EmissiveColor),
       }),
       new THREE.MeshPhongMaterial({
-        color: this.roofColor,
-        specular: 0x000000,
-        shininess: 100,
-        reflectivity: 0
+        emissiveIntensity: emissiveIntensityvalue,
+        color: new THREE.Color(CubeColor),
+        emissive: new THREE.Color(EmissiveColor),
       }),
       new THREE.MeshPhongMaterial({
-        color: this.roofColor,
-        specular: 0x000000,
-        shininess: 100,
-        reflectivity: 0
+        emissiveIntensity: emissiveIntensityvalue,
+        color: new THREE.Color(CubeColor),
+        emissive: new THREE.Color(EmissiveColor),
       }),
       new THREE.MeshPhongMaterial({
-        color: buildingColor,
-        specular: 0x000000,
-        emissiveIntensity: 1,
-        emissive: emissiveColor,
-        emissiveMap: this.dynamicTexture.texture,
-        shininess: 100,
-        reflectivity: 0
-      }),
-      new THREE.MeshPhongMaterial({
-        color: buildingColor,
-        specular: 0x000000,
-        emissiveIntensity: 1,
-        emissive: emissiveColor,
-        emissiveMap: this.dynamicTexture.texture,
-        shininess: 100,
-        reflectivity: 0
+        emissiveIntensity: emissiveIntensityvalue,
+        color: new THREE.Color(CubeColor),
+        emissive: new THREE.Color(EmissiveColor),
       })
     ];
 
@@ -186,64 +172,15 @@ class House {
     this.mesh.castShadow = false;
     this.mesh.receiveShadow = false;
 
-    this.geometry.computeFaceNormals();
-    this.geometry.computeVertexNormals();
-
-    this.mesh.position.x = this.xPos + this.width / 2;
-    this.mesh.position.y = this.yPos + this.height / 2;
-    this.mesh.position.z = this.zPos + this.depth / 2;
-  }
-
-  
-}
-
-// 🎯 CLASS FOR CATEGORIE CLOUD -------------------------- 
-
-class Platform {
-
-  constructor(_xPos, _yPos, _zPos) {
-    this.xPos = _xPos;
-    this.yPos = _yPos;
-    this.zPos = _zPos;
-
-    this.height = 0;
-    this.width = 0;
-    this.depth = 0;
-
-    // 🏠 GEOMETRY OF THE HOUSE
-
-    this.geometry = new THREE.BoxBufferGeometry(this.width, this.height, this.depth);
-    this.material = new THREE.MeshPhongMaterial({ color: "rgb(10,16,24)" });
-    this.mesh = new THREE.Mesh(this.geometry, this.material);
-
-    this.mesh.castShadow = true;
-    this.mesh.receiveShadow = true;
-
-    this.mesh.position.x = (this.xPos + this.width / 2) - 0.3;
-    this.mesh.position.y = this.yPos + this.height / 2;
-    this.mesh.position.z = (this.zPos + this.depth / 2) - 0.3;
+    this.mesh.position.x = Math.random()*35;
+    this.mesh.position.y = Math.random()*35;
+    this.mesh.position.z = Math.random()*35;
   }
 }
 
-// CLASS FOR BIG CHAOS CLOUD
+// FUNCTION TO GENERATE CATEGORIE CLOUD (e.g. Zukunftsforschung) -------------------------- 
 
-/*function generate_cloud() {
-  
-  for ( let i = 0; i < 320; i ++ ) {
-
-					const mesh = new THREE.Mesh( geometry, material );
-					mesh.position.x = Math.random() * 1600 - 800;
-					mesh.position.y = 0;
-					mesh.position.z = Math.random() * 1600 - 800;
-					mesh.updateMatrix();
-					mesh.matrixAutoUpdate = false;
-					scene.add( mesh );
-				}
-}*/
-
-// 🎯 FUNCTION TO GENERATE 3X2 DISTRICT -------------------------- 
-
-function generate_district(_offsetX, _offsetZ, tweets, tweetID, roof) {
+function generate_categoryCloud(keywords, keywordID) {
 
   let boxSizeX = 1;
   let boxSizeZ = 1;
@@ -254,12 +191,10 @@ function generate_district(_offsetX, _offsetZ, tweets, tweetID, roof) {
   let boxPositionZ = 0;
 
   let fixedBoxSizeY = 2;
-  let districtSize = 6;
 
   for (var i = 0; i < 100; i++) {
 
-    let tweetText = tweets[tweetID + i];
-    let roofText = roof[tweetID + i];
+    let keywordText = keywords[keywordID + i];
 
     let boxHeight = Math.random() * 2.5 + fixedBoxSizeY;
     let boxRowBreak = boxMaxRowItems * (boxSizeX + boxDistance);
@@ -269,38 +204,26 @@ function generate_district(_offsetX, _offsetZ, tweets, tweetID, roof) {
       boxPositionZ = Math.random();
     }
 
-    const house = new House(boxPositionX + _offsetX, 0, boxPositionZ + _offsetZ, boxHeight, tweetText, fixedBoxSizeY, roofText);
+    const cube = new Cube(boxPositionX + 100, 0, boxPositionZ - 100, boxHeight, keywordText, fixedBoxSizeY);
 
     boxPositionX = boxPositionX + boxDistance + boxSizeX;
 
-    houses.push(house); //Array von houses -> fügt ein house dem array hinzu
-    scene.add(house.mesh);
+    Cubes.push(cube); //Array von cubes -> fügt ein cube dem array "Cubes" hinzu
+    scene.add(cube.mesh);
   }
 }
 
-// 🎯 FUNCTION TO GENERATE GRID OF THE CITY -------------------------- 
+// 🎯 FUNCTION TO GENERATE THEMENCLOUD -------------------------- 
 
-function generate_city(tweets, roof) {
+function generate_cloud(keywords) {
 
-  const districtSize = 6;
-  const bufferX = 6;
-  const bufferZ = 4;
-  const districts = 4; // wenn mehr häuser als daten in der datenbank sind, gehts nicht.
+  const categoryClouds = 8; //Wie viel Kategorien Clouds gibt es?
 
-  let tweetID = 0;
+  let keywordID = 0;
 
-  const offsetX = (bufferX * districts - (bufferX - 4)) / 2;
-  const offsetZ = (bufferZ * districts - (bufferZ - 2.5)) / 2;
-
-  for (let j = 0; j < districts; j++) {
-    for (let k = 0; k < districts; k++) {
-      generate_district(bufferX * j - offsetX, bufferZ * k - offsetZ, tweets, tweetID, roof);
-      tweetID += districtSize;
-
-      const platform = new Platform(bufferX * j - offsetX, 0, bufferZ * k - offsetZ);
-      platforms.push(platform);
-      scene.add(platform.mesh);
-    }
+  for (let j = 0; j < categoryClouds; j++) {
+      generate_categoryCloud(keywords, keywordID);
+      //generate_categoryCube();
   }
 }
 
