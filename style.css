@@ -20,29 +20,20 @@ h1 {
   line-height: 110px;
   color: black;
   }
-  
-p {
-  padding: 0;
-  margin: 0;
-  font-family: "FKGroteskSemiMonoRegular", sans-serif;
-  }
 
 a {
   font-family: "FKGroteskSemiMonoRegular", sans-serif;
   text-decoration: none;
 }
 
-a:hover {
-  color: white;
-}
-
 .button-white {
   font-family: "FKGroteskSemiMonoRegular", sans-serif;
+  border-radius: 10px;
   font-weight: 400;
   font-size: 14px;
   background-color: black;
   border-style: none; 
-  padding: 10px 20px 10px 20px; 
+  padding: 5px 12px 5px 12px; 
   color: white;
   transition: 0.3s;
   margin-top: 30px;
@@ -50,28 +41,11 @@ a:hover {
   box-shadow: 1px 1px 6px 1px rgba(25, 35, 44, 0.4);
   }
 
-.button-margin-right {
-  margin-right: 20px;
-}
-
-button:focus { 
-  outline:none;
-  }
-
 button:hover { 
   cursor: pointer;
   background-color: white;
   color: black;
   }
-
-#scrollbox1, #scrollbox2, #scrollbox3, #scrollbox4, #scrollbox5, #scrollbox6, #scrollbox7 {
-  transition: 0.5s ease-in-out;
-  }
-
-#scrollbox2, #scrollbox3, #scrollbox4, #scrollbox5, #scrollbox6, #scrollbox7 {
-  display: none; 
-  opacity: 0,
-}
 
 .scrollbox-wrapper {
   position: fixed;
@@ -83,48 +57,9 @@ button:hover {
   align-items: center;
   }
 
-.scrollbox-wrapper-top {
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-content: flex-start;
-  align-items: flex-start;
-  padding-top: 200px;
-}
-
-.backgroundbox{
-  height: 100vh; 
-  width: 100vw; 
-  background-color: rgba(150, 175, 185, 0); 
-  position: absolute; 
-  top: 0px; 
-  left: 0px;
-  z-index: -10;
-  }
-
 .textbox {
   width: 55%;
   padding: 5px;
   color: #293645;
   text-align: center;
   }
-
-#scrollbox7 {
-  text-shadow: 3px 3px 40px #14181d, -3px -3px 40px #14181d, 0px 0px 40px #14181d
-}
-
-  /*RESPONSIVE FOR MOBILE*/
-
-  @media only screen and (max-width: 600px) {
-
-  h1 {
-    font-size: 50px;
-  }
-
-  p {
-  line-height: 22px;
-  font-size: 18px;
-  }
-}
