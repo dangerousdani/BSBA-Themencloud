@@ -2,6 +2,7 @@
 
 import * as THREE from './sources/three.module.js';
 import { OrbitControls } from '/sources/OrbitControls.js';
+import { RoundedBoxGeometry } from '/sources/RoundedBoxGeometry.js';
 
 // 🌐 GLOBAL VARIABLES -------------------------- 
 
@@ -49,11 +50,37 @@ controls.update();
 // 🌞 LIGHT SETTINGS -------------------------- 
 
 const skyColor = 0xffffff;
-const groundColor = 0xffffff;
-const hemiIntensity = 1;
+const groundColor = 0x000000;
+const hemiIntensity = 5;
 const hemiLight = new THREE.HemisphereLight(skyColor, groundColor, hemiIntensity);
-hemiLight.position.set(0, 0, 0);
-//scene.add(hemiLight);
+hemiLight.position.set(17, 50, 17);
+scene.add(hemiLight);
+
+const ambiColor = 0x40ff40;
+const ambiIntensity = 10;
+const ambiLight = new THREE.AmbientLight(ambiColor, ambiIntensity);
+scene.add(ambiLight);
+
+let pointColor = 0xffffff;
+let pointIntensity = 50;
+let pointDistance = 1000;
+let pointDecay = 0;
+
+var pointLight1 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
+var pointLight2 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
+var pointLight3 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
+var pointLight4 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
+
+
+pointLight1.position.set(17, 25, -10);
+pointLight2.position.set(-10, 25, 17);
+pointLight3.position.set(50, 25, 17);
+pointLight4.position.set(17, 25, 50);
+
+scene.add(pointLight1);
+scene.add(pointLight2);
+scene.add(pointLight3);
+scene.add(pointLight4);
 
 
 // 🎯 MAIN FUNCTION -------------------------- 
@@ -101,9 +128,6 @@ class Cube {
     this.zPos = _zPos;
 
     this.fixedBoxSizeY = _fixedBoxSizeY;
-    this.height = 1;
-    this.width = 1;
-    this.depth = 1;
 
     this.keywordString = _keywordString;
 
@@ -112,7 +136,8 @@ class Cube {
 
     // GEOMETRY OF THE CUBE 
 
-    this.geometry = new THREE.BoxBufferGeometry(this.width, this.height, this.depth);
+    this.geometry = new THREE.BoxBufferGeometry(1, 1, 1);
+
 
     // COLORS OF THE CUBE
 
@@ -132,6 +157,8 @@ class Cube {
     })
 
     // Haben verschiedene Seiten eines Cubes verschiedene Materialitäten, muss jede Seite einzeln definiert werden.
+    this.material = new THREE.MeshStandardMaterial({color: 'rgb(209,255,23)', roughness: 0, metalness: 0.7})
+    /*
     this.material = [
       new THREE.MeshPhongMaterial({
         emissiveIntensity: emissiveIntensityvalue,
@@ -143,7 +170,7 @@ class Cube {
         emissiveIntensity: emissiveIntensityvalue,
         color: new THREE.Color(CubeColor),
         emissive: new THREE.Color(EmissiveColor),
-        map: this.dynamicTexture.texture,
+        emissiveMap: this.dynamicTexture.texture,
       }),
       new THREE.MeshStandardMaterial({
         emissiveIntensity: emissiveIntensityvalue,
@@ -165,12 +192,10 @@ class Cube {
         color: new THREE.Color(CubeColor),
         emissive: new THREE.Color(EmissiveColor),
       })
-    ];
+    ]; */
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
 
-    this.mesh.castShadow = false;
-    this.mesh.receiveShadow = false;
 
     this.mesh.position.x = Math.random()*35;
     this.mesh.position.y = Math.random()*35;
