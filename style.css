@@ -21,6 +21,13 @@ h1 {
   color: black;
   }
 
+@media only screen and (max-width: 600px) {
+    h1 {
+      font-size: 60px;
+      line-height: 50px;
+    }
+  }
+
 a {
   font-family: "FKGroteskSemiMonoRegular", sans-serif;
   text-decoration: none;
