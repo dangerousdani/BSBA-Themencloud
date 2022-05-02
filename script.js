@@ -1,8 +1,7 @@
 // 📀 LOAD THREE JS -------------------------- 
 
 import * as THREE from './sources/three.module.js';
-import { OrbitControls } from '/sources/OrbitControls.js';
-import { RoundedBoxGeometry } from '/sources/RoundedBoxGeometry.js';
+import { OrbitControls } from './sources/OrbitControls.js';
 
 // 🌐 GLOBAL VARIABLES -------------------------- 
 
@@ -10,7 +9,7 @@ let scene, renderer, camera, controls;
 let Cubes = [];
 
 // RUN MAIN FUNCTIONS (AND LOAD JSON DATA (D3 Framework is in html!)-------------------------- 
-d3.json("sources/Themencloud-stichworte.json").then(function (data) {
+d3.json("./sources/Themencloud-stichworte.json").then(function (data) {
   init(data);
   animate(renderer, scene, camera, controls);
 });
@@ -49,7 +48,7 @@ controls.update();
 
 // 🌞 LIGHT SETTINGS -------------------------- 
 
-const skyColor = 0xffffff;
+/*const skyColor = 0xffffff;
 const groundColor = 0x000000;
 const hemiIntensity = 5;
 const hemiLight = new THREE.HemisphereLight(skyColor, groundColor, hemiIntensity);
@@ -75,25 +74,55 @@ var pointLight4 = new THREE.PointLight(pointColor, pointIntensity, pointDistance
 pointLight1.position.set(17, 25, -10);
 pointLight2.position.set(-10, 25, 17);
 pointLight3.position.set(50, 25, 17);
-pointLight4.position.set(17, 25, 50);
+pointLight4.position.set(17, 25, 50);*/
 
-scene.add(pointLight1);
-scene.add(pointLight2);
-scene.add(pointLight3);
-scene.add(pointLight4);
+//scene.add(pointLight1);
+//scene.add(pointLight2);
+//scene.add(pointLight3);
+//scene.add(pointLight4);
+
+//DIR LIGHT 1
+const light1 = new THREE.DirectionalLight(0xffffff, 1000);
+light1.position.set(17, 30, 50);
+scene.add(light1);
+//+HELPER
+const helper1 = new THREE.DirectionalLightHelper( light1, 5 );
+scene.add( helper1 );
+
+//DIR LIGHT 1
+const light2 = new THREE.DirectionalLight(0xffffff, 1000);
+light2.position.set(50, 30, 17);
+scene.add(light2);
+//+HELPER
+const helper2 = new THREE.DirectionalLightHelper( light2, 5 );
+scene.add( helper2 );
+
 
 
 // 🎯 MAIN FUNCTION -------------------------- 
 
 function init(data) {
 
-  let keywords = [];
+  let keywords1 = [];
   for (var i = 0; i < data.article.length; i++) {
-    keywords.push(data.article[i].Stichwort);
+    if (data.article[i].Digitalisierung == 'x') {
+    keywords1.push(data.article[i].Stichwort);
+    }
   }
 
-  generate_cloud(keywords);
-  generate_cloud.position = 100;
+  let keywords2 = [];
+  for (var i = 0; i < data.article.length; i++) {
+    if (data.article[i].Stadtentwicklung == 'x') {
+    keywords2.push(data.article[i].Stichwort);
+    }
+  }
+  
+  console.log(keywords1);
+  console.log(keywords1.length);
+  
+  generate_cloud(keywords1);
+  generate_cloud(keywords2);
+
 
   helper(); // Koordinatensystem  
 }
@@ -118,6 +147,20 @@ function generate_categoryCube() {
 
 }
 
+// Material test
+
+
+const material22 = new THREE.MeshPhysicalMaterial({  
+  roughness: 0,  
+  transmission: 1,  
+  thickness: 0.5, // Add refraction!
+});
+
+
+const geometry22 = new THREE.IcosahedronGeometry(1, 0);
+const mesh = new THREE.Mesh(geometry22, material22)
+scene.add(mesh);
+
 // CLASS FOR SINGLE CUBE -------------------------- 
 
 class Cube {
@@ -136,12 +179,36 @@ class Cube {
 
     // GEOMETRY OF THE CUBE 
 
-    this.geometry = new THREE.BoxBufferGeometry(1, 1, 1);
+    //ROUNDED BOX
 
+    let shape = new THREE.Shape();
+    let eps = 0.00001;
+    let radius = 0.03;
+    let radius0 = 0.03;
+    let height = 1;
+    let width = 1;
+    let depth = 1;
+    let smoothness = 3;
+    shape.absarc(eps, eps, eps, -Math.PI / 2, -Math.PI, true);
+    shape.absarc(eps, height - radius * 2, eps, Math.PI, Math.PI / 2, true);
+    shape.absarc(width - radius * 2, height - radius * 2, eps, Math.PI / 2, 0, true);
+    shape.absarc(width - radius * 2, eps, eps, 0, -Math.PI / 2, true);
+    this.geometry = new THREE.ExtrudeBufferGeometry(shape, {
+      amount: depth - radius0 * 2,
+      bevelEnabled: true,
+      bevelSegments: smoothness * 2,
+      steps: 1,
+      bevelSize: radius,
+      bevelThickness: radius0,
+      curveSegments: smoothness
+    });
+
+    //BOX WITH SHARP EDGES
+    //this.geometry = new THREE.BoxGeometry(1, 1, 1);
 
     // COLORS OF THE CUBE
 
-    let CubeColor = "rgb(209,255,23)";
+    let CubeColor = "rgb(220,255,35)";
     let EmissiveColor = "rgb(40,255,6)";
     let emissiveIntensityvalue = 11;
 
@@ -157,7 +224,14 @@ class Cube {
     })
 
     // Haben verschiedene Seiten eines Cubes verschiedene Materialitäten, muss jede Seite einzeln definiert werden.
-    this.material = new THREE.MeshStandardMaterial({color: 'rgb(209,255,23)', roughness: 0, metalness: 0.7})
+    this.material = new THREE.MeshPhysicalMaterial({
+      color: CubeColor, 
+      roughness: 0.2,  
+      transmission: 1,  
+      thickness: 0.2,
+      emissiveIntensity: 7,
+      emissive: new THREE.Color(EmissiveColor),
+    })
     /*
     this.material = [
       new THREE.MeshPhongMaterial({
@@ -205,7 +279,7 @@ class Cube {
 
 // FUNCTION TO GENERATE CATEGORIE CLOUD (e.g. Zukunftsforschung) -------------------------- 
 
-function generate_categoryCloud(keywords, keywordID) {
+function generate_categoryCloud(keywords1, keywordID) {
 
   let boxSizeX = 1;
   let boxSizeZ = 1;
@@ -217,9 +291,9 @@ function generate_categoryCloud(keywords, keywordID) {
 
   let fixedBoxSizeY = 2;
 
-  for (var i = 0; i < 100; i++) {
+  for (var i = 0; i < 46; i++) { //tbd nicht die absolute zahl, sondern die array länge der kategorie
 
-    let keywordText = keywords[keywordID + i];
+    let keywordText = keywords1[keywordID + i];
 
     let boxHeight = Math.random() * 2.5 + fixedBoxSizeY;
     let boxRowBreak = boxMaxRowItems * (boxSizeX + boxDistance);
@@ -240,14 +314,14 @@ function generate_categoryCloud(keywords, keywordID) {
 
 // 🎯 FUNCTION TO GENERATE THEMENCLOUD -------------------------- 
 
-function generate_cloud(keywords) {
+function generate_cloud(keywords1) {
 
-  const categoryClouds = 8; //Wie viel Kategorien Clouds gibt es?
+  const categoryClouds = 1; //Wie viel Kategorien Clouds gibt es?
 
   let keywordID = 0;
 
   for (let j = 0; j < categoryClouds; j++) {
-      generate_categoryCloud(keywords, keywordID);
+      generate_categoryCloud(keywords1, keywordID);
       //generate_categoryCube();
   }
 }
