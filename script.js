@@ -5,11 +5,20 @@ import { OrbitControls } from './sources/OrbitControls.js';
 
 // 🌐 GLOBAL VARIABLES -------------------------- 
 
-let scene, renderer, camera, controls;
+let scene, renderer, camera, controls, pointer, raycaster;
 let Cubes = [];
 
+// INTERACTION
+pointer = new THREE.Vector2();
+raycaster = new THREE.Raycaster();
+
+let nearToPivotPoint = 4; //Info: The higher the closer //5 is very far away, 20 is very close
+
 // RUN MAIN FUNCTIONS (AND LOAD JSON DATA (D3 Framework is in html!)-------------------------- 
-d3.json("./sources/Themencloud-stichworte.json").then(function (data) {
+Promise.all([
+  d3.json("./sources/keywords.json"),
+  d3.json("./sources/categories.json"),
+]).then(function (data) {
   init(data);
   animate(renderer, scene, camera, controls);
 });
@@ -35,20 +44,19 @@ scene.background = new THREE.Color(0x96AFB9);
 // 🎥 CAM SETTING -------------------------- 
 
 camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+camera.position.set( 35, 35, 35 );
 
 // CONTROLS SETTING -------------------------- 
 
 controls = new OrbitControls( camera, renderer.domElement );
-controls.target.set(17,17,17);
-
-camera.position.set( 35, 35, 35 );
+controls.target.set(0,0,0);
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.3;
 controls.update();
 
 // 🌞 LIGHT SETTINGS -------------------------- 
 
-/*const skyColor = 0xffffff;
+const skyColor = 0xffffff;
 const groundColor = 0x000000;
 const hemiIntensity = 5;
 const hemiLight = new THREE.HemisphereLight(skyColor, groundColor, hemiIntensity);
@@ -60,134 +68,152 @@ const ambiIntensity = 10;
 const ambiLight = new THREE.AmbientLight(ambiColor, ambiIntensity);
 scene.add(ambiLight);
 
-let pointColor = 0xffffff;
-let pointIntensity = 50;
-let pointDistance = 1000;
-let pointDecay = 0;
-
-var pointLight1 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
-var pointLight2 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
-var pointLight3 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
-var pointLight4 = new THREE.PointLight(pointColor, pointIntensity, pointDistance, pointDecay);
-
-
-pointLight1.position.set(17, 25, -10);
-pointLight2.position.set(-10, 25, 17);
-pointLight3.position.set(50, 25, 17);
-pointLight4.position.set(17, 25, 50);*/
-
-//scene.add(pointLight1);
-//scene.add(pointLight2);
-//scene.add(pointLight3);
-//scene.add(pointLight4);
-
 //DIR LIGHT 1
-const light1 = new THREE.DirectionalLight(0xffffff, 1000);
+const light1 = new THREE.DirectionalLight(0xffffff, 100);
 light1.position.set(17, 30, 50);
 scene.add(light1);
 //+HELPER
 const helper1 = new THREE.DirectionalLightHelper( light1, 5 );
-scene.add( helper1 );
+//scene.add( helper1 );
 
-//DIR LIGHT 1
-const light2 = new THREE.DirectionalLight(0xffffff, 1000);
+//DIR LIGHT 2
+const light2 = new THREE.DirectionalLight(0xffffff, 100);
 light2.position.set(50, 30, 17);
 scene.add(light2);
 //+HELPER
 const helper2 = new THREE.DirectionalLightHelper( light2, 5 );
-scene.add( helper2 );
-
-
+//scene.add( helper2 );
 
 // 🎯 MAIN FUNCTION -------------------------- 
 
 function init(data) {
 
+	raycaster = new THREE.Raycaster();
+
+  let category = [];
+  for (var i = 0; i < data[1].category.length; i++) {
+    category.push(data[1].category[i].name);
+  }
+  
   let keywords1 = [];
-  for (var i = 0; i < data.article.length; i++) {
-    if (data.article[i].Digitalisierung == 'x') {
-    keywords1.push(data.article[i].Stichwort);
-    }
-  }
-
   let keywords2 = [];
-  for (var i = 0; i < data.article.length; i++) {
-    if (data.article[i].Stadtentwicklung == 'x') {
-    keywords2.push(data.article[i].Stichwort);
+  let keywords3 = [];
+  let keywords4 = [];
+  let keywords5 = [];
+  let keywords6 = [];
+  let keywords7 = [];
+  let keywords8 = [];
+
+  for (var i = 0; i < data[0].article.length; i++) {
+    if (data[0].article[i].Digitalisierung == 'x') {
+      keywords1.push(data[0].article[i].Stichwort);
+    }
+    if (data[0].article[i].Stadtentwicklung == 'x') {
+      keywords2.push(data[0].article[i].Stichwort);
+    }
+    if (data[0].article[i].Zukunftsforschung == 'x') {
+      keywords3.push(data[0].article[i].Stichwort);
+    }
+    if (data[0].article[i].CircularCity == 'x') {
+      keywords4.push(data[0].article[i].Stichwort);
+    }
+    if (data[0].article[i].Klimawandel == 'x') {
+      keywords5.push(data[0].article[i].Stichwort);
+    }
+    if (data[0].article[i].Innovation == 'x') {
+      keywords6.push(data[0].article[i].Stichwort);
+    }
+    if (data[0].article[i].Nachhaltigkeit == 'x') {
+      keywords7.push(data[0].article[i].Stichwort);
+    }
+    if (data[0].article[i].Nachhaltigkeitsinnovationen == 'x') {
+      keywords8.push(data[0].article[i].Stichwort);
     }
   }
-  
-  console.log(keywords1);
-  console.log(keywords1.length);
-  
-  generate_cloud(keywords1);
-  generate_cloud(keywords2);
 
+  let keywords1Length = keywords1.length;
+  let keywords2Length = keywords2.length;
+  let keywords3Length = keywords3.length;
+  let keywords4Length = keywords4.length;
+  let keywords5Length = keywords5.length;
+  let keywords6Length = keywords6.length;
+  let keywords7Length = keywords7.length;
+  let keywords8Length = keywords8.length;
 
-  helper(); // Koordinatensystem  
+  let keyWordList = [keywords1, keywords2, keywords3, keywords4, keywords5, keywords6, keywords7, keywords8];
+  let keyWordLengthList = [keywords1Length, keywords2Length, keywords3Length, keywords4Length, keywords5Length, keywords6Length, keywords7Length, keywords8Length]
+
+  
+  //tbd: Keywords2 usw. muss dann hier übergeben werden!
+  generate_cloud(category, keyWordList, keyWordLengthList);
+
+  //helper(); // Koordinatensystem  
 }
 
 // CLASS FOR CATEGORY CUBE
 
-function generate_categoryCube() {
+class categoryCube {
 
-  const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
-  const cube = new THREE.Mesh( geometry, material );
+  constructor(_categoryText,  categoryCubeXPos, categoryCubeYPos, categoryCubeZPos) {
 
-  cube.position.z = Math.random()*40;
-  cube.position.y = Math.random()*40;
-  cube.position.x = Math.random()*40;
+    // GEOMETRY 
 
-  cube.scale.y = 5; // height = Math.random()*40;
-  cube.scale.x = 5;
-  cube.scale.z = 5;
+    this.size = 5;
+    this.geometry = new THREE.BoxBufferGeometry(this.size, this.size, this.size);
 
-  scene.add( cube );
+    // MATERIAL AND TEXTURE
 
+    this.categoryString = _categoryText;
+    this.dynamicTexture = new THREEx.DynamicTexture(600, 600)
+
+    this.dynamicTexture.drawTextCooked({
+      background: "white", 
+      text: this.categoryString,
+      lineHeight: 0.20,
+      emissive: 100,
+      //blending: THREE.AdditiveBlending,
+      fillStyle: "black",
+      font: "75px Helvetica",
+      marginTop: 0
+    })
+
+    this.material =  new THREE.MeshPhongMaterial({
+        color: "rgb(0,0,0)",
+        emissiveIntensity: 8,
+        emissive: "rgb(40,255,6)",
+        emissiveMap: this.dynamicTexture.texture,
+    }),
+
+    // MESH, NAME OF THE MESH, AND IT'S POSITIONING
+    this.mesh = new THREE.Mesh(this.geometry, this.material);
+    this.mesh.name = "categoryCube";
+    console.log("It's name must be categoryCube: " + this.mesh.name);
+    this.mesh.position.set( categoryCubeXPos,categoryCubeYPos,categoryCubeZPos);
+  }
 }
-
-// Material test
-
-
-const material22 = new THREE.MeshPhysicalMaterial({  
-  roughness: 0,  
-  transmission: 1,  
-  thickness: 0.5, // Add refraction!
-});
-
-
-const geometry22 = new THREE.IcosahedronGeometry(1, 0);
-const mesh = new THREE.Mesh(geometry22, material22)
-scene.add(mesh);
 
 // CLASS FOR SINGLE CUBE -------------------------- 
 
 class Cube {
 
-  constructor(_xPos, _yPos, _zPos, _height, _keywordString, _fixedBoxSizeY) {
-    this.xPos = _xPos;
-    this.yPos = _yPos;
-    this.zPos = _zPos;
+  constructor(_keywordString, randomCategoryCubeXPos, randomCategoryCubeYPos, randomCategoryCubeZPos) {
 
-    this.fixedBoxSizeY = _fixedBoxSizeY;
+    //GEOMETRY
+    let size = 2;
 
-    this.keywordString = _keywordString;
+    //BOX WITH SHARP EDGES
+    this.geometry = new THREE.BoxGeometry(size, size, size);
 
-    this.dynamicTexture = new THREEx.DynamicTexture(400, 400 * this.height)
-    this.dynamicTexture.clear('rgb(29,41,81)')
+    //BOX WITH ROUND EDGES
 
-    // GEOMETRY OF THE CUBE 
-
-    //ROUNDED BOX
-
-    let shape = new THREE.Shape();
+    /*let shape = new THREE.Shape();
+    
     let eps = 0.00001;
     let radius = 0.03;
     let radius0 = 0.03;
-    let height = 1;
-    let width = 1;
-    let depth = 1;
+    let height = size;
+    let width = size;
+    let depth = size;
     let smoothness = 3;
     shape.absarc(eps, eps, eps, -Math.PI / 2, -Math.PI, true);
     shape.absarc(eps, height - radius * 2, eps, Math.PI, Math.PI / 2, true);
@@ -201,37 +227,39 @@ class Cube {
       bevelSize: radius,
       bevelThickness: radius0,
       curveSegments: smoothness
-    });
+    });*/
 
-    //BOX WITH SHARP EDGES
-    //this.geometry = new THREE.BoxGeometry(1, 1, 1);
+    //MATERIAL AND TEXTURE
 
-    // COLORS OF THE CUBE
-
-    let CubeColor = "rgb(220,255,35)";
-    let EmissiveColor = "rgb(40,255,6)";
-    let emissiveIntensityvalue = 11;
-
-    this.checkText = true;
+    this.keywordString = _keywordString;
+    this.dynamicTexture = new THREEx.DynamicTexture(1000, 1000);
 
     this.dynamicTexture.drawTextCooked({
-      background: "white", // Wenn emessiv muss der BG schwarz sein, damit die emissiveMap (als Maske) funktioniert
+      background: "white", 
       text: this.keywordString,
-      lineHeight: 0.12 / this.height,
+      lineHeight: 0.20,
+      emissive: 100,
+      //blending: THREE.AdditiveBlending,
       fillStyle: "black",
-      font: "48px Helvetica",
-      marginTop: ((this.height - this.fixedBoxSizeY + 1) / this.height) // da fixedBoxSize noch zu hoch ist.
+      font: "150px Helvetica",
+      marginTop: 0
     })
 
-    // Haben verschiedene Seiten eines Cubes verschiedene Materialitäten, muss jede Seite einzeln definiert werden.
-    this.material = new THREE.MeshPhysicalMaterial({
+    this.material = new THREE.MeshPhongMaterial({
+      color: "rgb(0,0,0)",
+      emissiveIntensity: 8,
+      emissive: "rgb(40,255,6)",
+      emissiveMap: this.dynamicTexture.texture,
+    })
+
+    /*this.material = new THREE.MeshPhysicalMaterial({
       color: CubeColor, 
       roughness: 0.2,  
       transmission: 1,  
       thickness: 0.2,
       emissiveIntensity: 7,
       emissive: new THREE.Color(EmissiveColor),
-    })
+    })*/
     /*
     this.material = [
       new THREE.MeshPhongMaterial({
@@ -268,79 +296,126 @@ class Cube {
       })
     ]; */
 
+    // MESH, MESH NAME AND IT'S POSITIONING
+
     this.mesh = new THREE.Mesh(this.geometry, this.material);
+    
+    this.mesh.name = "smallCube";
+    console.log("It's name must be smallCube: " + this.mesh.name);
 
-
-    this.mesh.position.x = Math.random()*35;
-    this.mesh.position.y = Math.random()*35;
-    this.mesh.position.z = Math.random()*35;
+    this.mesh.position.x = randomCategoryCubeXPos;
+    this.mesh.position.y = randomCategoryCubeYPos;
+    this.mesh.position.z = randomCategoryCubeZPos;
   }
 }
 
-// FUNCTION TO GENERATE CATEGORIE CLOUD (e.g. Zukunftsforschung) -------------------------- 
+// FUNCTION TO GENERATE CATEGORIE CLOUD (e.g. Digitalisierung) -------------------------- 
 
-function generate_categoryCloud(keywords1, keywordID) {
+class generate_categoryCloud {
 
-  let boxSizeX = 1;
-  let boxSizeZ = 1;
-  let boxDistance = 0.5;
-  let boxMaxRowItems = 3;
+  constructor(specialKeywordList, specialKeywordLengthList, categoryCubeXPos, categoryCubeYPos, categoryCubeZPos) {
 
-  let boxPositionX = 0;
-  let boxPositionZ = 0;
+    this.keywordlength = specialKeywordLengthList;
 
-  let fixedBoxSizeY = 2;
+    for (var i = 0; i < specialKeywordLengthList; i++) {
 
-  for (var i = 0; i < 46; i++) { //tbd nicht die absolute zahl, sondern die array länge der kategorie
+      let keywordText = specialKeywordList[i];
 
-    let keywordText = keywords1[keywordID + i];
+      let randomCategoryCubeXPos = categoryCubeXPos + Math.ceil(Math.random() * 99) * (Math.round(Math.random()) ? 1 : -1)/nearToPivotPoint;
+      let randomCategoryCubeYPos = categoryCubeYPos + Math.ceil(Math.random() * 99) * (Math.round(Math.random()) ? 1 : -1)/nearToPivotPoint;
+      let randomCategoryCubeZPos = categoryCubeZPos + Math.ceil(Math.random() * 99) * (Math.round(Math.random()) ? 1 : -1)/nearToPivotPoint;
+      
+      const cube = new Cube(keywordText, randomCategoryCubeXPos, randomCategoryCubeYPos, randomCategoryCubeZPos);
+      
+      Cubes.push(cube); //Array von cubes -> adds a cube into the array "Cubes"
+      scene.add(cube.mesh);
+    } 
+  }
+  
+}
 
-    let boxHeight = Math.random() * 2.5 + fixedBoxSizeY;
-    let boxRowBreak = boxMaxRowItems * (boxSizeX + boxDistance);
+// 🎯 FUNCTION TO GENERATE BIG THEMENCLOUD INCLUDING ALL 8 CATEGORIES -------------------------- 
 
-    if (boxPositionX >= boxRowBreak) {
-      boxPositionX = Math.random();
-      boxPositionZ = Math.random();
-    }
+function generate_cloud(category, keyWordList, keyWordLengthList) {
+  
+  let categoryCubeXcoords = [3,10,12,-5,12,-6,7,-30];
+  let categoryCubeYcoords = [3,2,20,7,-3,6,-17,2];
+  let categoryCubeZcoords = [3,-10,22,23,-3,12,-6,7];
 
-    const cube = new Cube(boxPositionX + 100, 0, boxPositionZ - 100, boxHeight, keywordText, fixedBoxSizeY);
+  //generate 8 Category Cubes for the 8 Categories
+  for (let i = 0; i < 8; i++) {
+      
+      let categoryText = category[i];
+      let categoryCubeXPos = categoryCubeXcoords[i];
+      let categoryCubeYPos = categoryCubeYcoords[i];
+      let categoryCubeZPos = categoryCubeZcoords[i];
 
-    boxPositionX = boxPositionX + boxDistance + boxSizeX;
+      let specialKeywordList = keyWordList[i];
+      let specialKeywordLengthList = keyWordLengthList[i];
 
-    Cubes.push(cube); //Array von cubes -> fügt ein cube dem array "Cubes" hinzu
-    scene.add(cube.mesh);
+      const categoryCubes = new categoryCube(categoryText, categoryCubeXPos, categoryCubeYPos, categoryCubeZPos);
+      scene.add(categoryCubes.mesh);
+
+      const categoryClouds = new generate_categoryCloud(specialKeywordList, specialKeywordLengthList, categoryCubeXPos, categoryCubeYPos, categoryCubeZPos);
   }
 }
 
-// 🎯 FUNCTION TO GENERATE THEMENCLOUD -------------------------- 
 
-function generate_cloud(keywords1) {
 
-  const categoryClouds = 1; //Wie viel Kategorien Clouds gibt es?
+// HOVER AND FOCUS CUBE ANIMATION
 
-  let keywordID = 0;
+function resetMaterials(){
 
-  for (let j = 0; j < categoryClouds; j++) {
-      generate_categoryCloud(keywords1, keywordID);
-      //generate_categoryCube();
+  for (let i = 0; i < scene.children.length; i++) {
+    document.body.style.cursor = "url(sources/PointerCube.png), auto";
+      if (scene.children[i].material) {
+        scene.children[i].material.color.set( 0x002200 );
+      }
+    };
+  }  
+
+function hoverCubes(nearToPivotPoint){
+
+  raycaster.setFromCamera(pointer, camera);
+  var intersects = raycaster.intersectObjects(scene.children);
+  
+  for (let i = 0; i < intersects.length; i++) {
+    intersects[i].object.material.color.set( 0x000000 );
+    document.body.style.cursor = "url(sources/PointerArrow.png), auto";
   }
 }
 
-// 🎥 CAMERA ANIMATION + TEXT ----------------------- 
+function onPointerMove( event ) {
+
+	// calculate pointer position in normalized device coordinates
+	// (-1 to +1) for both components
+
+	pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+}
+
+window.addEventListener( 'pointermove', onPointerMove, false);
+
+
+// ANIMATE FUNCTION -------------------------- 
 
 function animate() {
 
-  requestAnimationFrame(animate);
   controls.update();
+  resetMaterials();
+  hoverCubes();
   renderer.render(scene, camera);
-
+ 
   // BUTTONS 
-
   document.getElementById("start").onclick = function () {
-    document.getElementById("scrollbox1").style.display = "none";
+    document.getElementById("explore").style.display = "none";
   };
 
+  window.requestAnimationFrame(animate);
+
 }
+
 
 // 🔶 ORIENTATION CUBES FOR AXES -------------------------- 
 

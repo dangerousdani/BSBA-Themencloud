@@ -2,6 +2,13 @@
 
 <script src='./sources/three.min.js'></script>
 <script src='./sources/threex.dynamictexture.js'></script>
+<script type="importmap">
+	{
+		"imports": {
+			"three": "../build/three.module.js"
+		}
+	}
+</script>
 
 <html>
 
@@ -22,7 +29,7 @@
 <body>
 	<script type="module" src="./script.js"></script>
   
-	<div class="scrollbox-wrapper" id="scrollbox1">
+	<div class="scrollbox-wrapper" id="explore">
 		<div class="backgroundbox"></div>
 		<div class="textbox">
 			<h1>Erforsche den digitalen Raum der Zukunft.</h1>
